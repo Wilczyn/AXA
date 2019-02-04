@@ -1,0 +1,49 @@
+Celem zadania jest jak najlepsze oszacowanie oczekiwanej czêstoœci (rocznej) szkód wykorzystuj¹c dostêpny zestaw zmiennych, jednoczeœnie dbaj¹c o to ¿eby uzyskany model by³ jak najmniej przeuczony na zbiorze treningowym, interpretowalny i wydajny.
+
+Opis zbioru:
+PolicyID - numer polisy
+ClaimNb - liczba szkód w okresie Exposure
+Exposure - ekspozycja (czas trwania polisy w latach, 1 = polisa trwa³a rok)
+Power - moc samochodu (zmienna nominalna)
+CarAge - wiek samochodu w latach
+DriverAge - wiek kierowcy w latach
+Brand - marka samochodu (zmienna nominalna). Marki podzielone na grupy:: A- Renaut Nissan and Citroen, B- Volkswagen,
+Audi, Skoda and Seat, C- Opel, General Motors and Ford, D- Fiat, E- Mercedes Chrysler
+and BMW, F- Japanese (except Nissan) and Korean, G- other.
+Gas - paliwo samochodu
+Region - region (we Francji) 
+Density - gêstoœæ zaludnienia (liczba mieszkañców na km2 w mieœcie w którym mieszka kierowca)
+
+Zbiór nale¿y najpierw podzieliæ sobie na czêœæ treningow¹ i testow¹ 80%/20% (PolicyID z ostatni¹ cyfr¹ 8 lub 9 - zbiór testowy)
+
+Nale¿y zbudowaæ 2 modele:
+* model typu glm (mo¿e byæ rozszerzony o splajny, itp., wa¿ne aby by³ podobnie interpretowany)
+* model typu gbm [jeœli kandydat nie zna gbm, mo¿e byæ jakaœ inna technika Machnine Learning lub inna ni¿ glm]
+
+Dla otrzymanych modeli:
+* opowiedzieæ jak wygl¹da³ proces "optymalizacji" modelu
+* porównaæ zdolnoœæ predykcyjn¹ (kryterium: gini)
+* pokazaæ które zmienne wysz³y istotne, które nie? (zilustrowaæ na wykresach), próbowaæ zinterpretowaæ
+* czy da siê wskazaæ jakieœ interakcje?
+* jakie s¹ ró¿nice, dobre/s³abe strony, na których zmiennych która metoda radzi sobie lepiej i dlaczego? co potencjalnie poprawi³oby dopasowanie? itp.
+* jakie s¹ ogólnie dobre/s³abe strony obu metod?
+
+
+Najlepiej, aby rozwi¹zanie by³o napisane w R lub Python
+
+Wskazówki:
+1. Tradycyjnie zak³ada siê ¿e liczba szkód pochodzi z rozk³adu Poissona i taki rozk³ad najlepiej wykorzystywaæ (jeœli siê da = jeœli algorytm to umo¿liwia)
+2. Ekspozycja s³u¿y to standaryzacji i ustawienia wag obserwacji. Trzeba zwróciæ uwagê, ¿eby j¹ poprawnie uwzglêdniæ w modelu
+3. Defnicja miary (wa¿onego) gini w jêzyku R:
+
+WeightedGini <- function(Observed, weights, Predicted){
+  df = data.frame(Observed = Observed, weights = weights, Predicted = Predicted)
+  df <- df[order(df$Predicted, decreasing = FALSE),]
+  df$random = cumsum((df$weights/sum(df$weights)))
+  totalPositive <- sum(df$Observed * df$weights)
+  df$cumPosFound <- cumsum(df$Observed * df$weights)
+  df$Lorentz <- df$cumPosFound / totalPositive
+  n <- nrow(df)
+  gini <- sum(df$Lorentz[-1]*df$random[-n]) - sum(df$Lorentz[-n]*df$random[-1])
+  return(gini)
+}
